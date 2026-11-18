@@ -1,0 +1,15 @@
+# Local build outputs
+/kite-rpc-health
+*.test
+*.out
+/coverage.txt
+
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+
+# Editor and OS artifacts
+.DS_Store
+.idea/
+.vscode/
