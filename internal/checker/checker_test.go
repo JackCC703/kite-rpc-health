@@ -73,3 +73,40 @@ func TestHTTPFailure(t *testing.T) {
 		t.Fatalf("unexpected result: %+v", r)
 	}
 }
+
+func TestRPCTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		fmt.Fprint(w, `{"jsonrpc":"2.0","id":1,"result":"0x940"}`)
+	}))
+	defer srv.Close()
+
+	result := NewClient(10*time.Millisecond).Check(context.Background(), srv.URL)
+	if result.Healthy || !strings.Contains(result.Error, "deadline exceeded") {
+		t.Fatalf("expected timeout failure, got %+v", result)
+	}
+}
+
+func TestMalformedRPCResponses(t *testing.T) {
+	cases := []struct {
+		name, body, expected string
+	}{
+		{"wrong response ID", `{"jsonrpc":"2.0","id":2,"result":"0x940"}`, "mismatched response ID"},
+		{"wrong version", `{"jsonrpc":"1.0","id":1,"result":"0x940"}`, "invalid JSON-RPC version"},
+		{"missing result", `{"jsonrpc":"2.0","id":1}`, "missing result"},
+		{"invalid hex", `{"jsonrpc":"2.0","id":1,"result":"0xzz"}`, "invalid hex result"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, tc.body)
+			}))
+			defer srv.Close()
+			result := NewClient(time.Second).Check(context.Background(), srv.URL)
+			if result.Healthy || !strings.Contains(result.Error, tc.expected) {
+				t.Fatalf("expected %q failure, got %+v", tc.expected, result)
+			}
+		})
+	}
+}

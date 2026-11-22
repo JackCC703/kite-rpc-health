@@ -29,3 +29,7 @@ Observed JSON-RPC response (snapshot, **not** a constant or mock value):
 ```
 
 The check completed with exit code 0. Latency and block height are point-in-time observations; availability can change. This demonstrates basic RPC connectivity and chain-ID validation, not transaction settlement or consensus correctness.
+
+## Error-handling regression coverage (2026-11-22)
+
+Local HTTP test servers verify that a slow RPC request fails with a deadline error and that mismatched JSON-RPC response IDs, unsupported protocol versions, missing results, and invalid hex quantities are rejected. No public endpoint or credentials are needed for these deterministic tests.
