@@ -33,3 +33,7 @@ The check completed with exit code 0. Latency and block height are point-in-time
 ## Error-handling regression coverage (2026-11-22)
 
 Local HTTP test servers verify that a slow RPC request fails with a deadline error and that mismatched JSON-RPC response IDs, unsupported protocol versions, missing results, and invalid hex quantities are rejected. No public endpoint or credentials are needed for these deterministic tests.
+
+## Diagnostic output and response limits (2026-11-23)
+
+When a reachable RPC reports a different chain ID, or the block-number RPC fails after chain identification, the health-check JSON includes the observed `chain_id` alongside `healthy: false` and the error. This helps diagnose wrong-network URLs and partial endpoint failures. The checker also rejects JSON-RPC bodies larger than 1 MiB; deterministic local-server tests cover both partial failure and oversize-response handling.

@@ -98,12 +98,15 @@ func (c *Client) Check(ctx context.Context, endpoint string) Result {
 	}
 	start := time.Now()
 	chain, err := c.call(ctx, endpoint, "eth_chainId")
-	if err == nil && chain != KiteTestnetChainID {
-		err = fmt.Errorf("unexpected chain ID %d (expected %d)", chain, KiteTestnetChainID)
-	}
 	if err == nil {
+		// Preserve the observed chain on errors so operators can diagnose
+		// misconfigured endpoints rather than seeing a misleading zero value.
 		r.ChainID = chain
-		r.BlockNumber, err = c.call(ctx, endpoint, "eth_blockNumber")
+		if chain != KiteTestnetChainID {
+			err = fmt.Errorf("unexpected chain ID %d (expected %d)", chain, KiteTestnetChainID)
+		} else {
+			r.BlockNumber, err = c.call(ctx, endpoint, "eth_blockNumber")
+		}
 	}
 	r.LatencyMS = time.Since(start).Milliseconds()
 	if err != nil {

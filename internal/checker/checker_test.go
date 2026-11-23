@@ -3,6 +3,7 @@ package checker
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -43,7 +44,7 @@ func TestWrongChain(t *testing.T) {
 	srv := serverFor("0x1", "0x12")
 	defer srv.Close()
 	r := NewClient(time.Second).Check(context.Background(), srv.URL)
-	if r.Healthy || !strings.Contains(r.Error, "unexpected chain ID") {
+	if r.Healthy || r.ChainID != 1 || !strings.Contains(r.Error, "unexpected chain ID") {
 		t.Fatalf("unexpected result: %+v", r)
 	}
 }
@@ -108,5 +109,36 @@ func TestMalformedRPCResponses(t *testing.T) {
 				t.Fatalf("expected %q failure, got %+v", tc.expected, result)
 			}
 		})
+	}
+}
+
+func TestBlockHeightFailurePreservesChainID(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("read request: %v", err)
+			return
+		}
+		if strings.Contains(string(body), "eth_blockNumber") {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		fmt.Fprint(w, `{"jsonrpc":"2.0","id":1,"result":"0x940"}`)
+	}))
+	defer srv.Close()
+	result := NewClient(time.Second).Check(context.Background(), srv.URL)
+	if result.Healthy || result.ChainID != KiteTestnetChainID || !strings.Contains(result.Error, "503") {
+		t.Fatalf("expected reported chain ID and failed block read, got %+v", result)
+	}
+}
+
+func TestOversizedRPCResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, strings.Repeat("x", (1<<20)+1))
+	}))
+	defer srv.Close()
+	result := NewClient(time.Second).Check(context.Background(), srv.URL)
+	if result.Healthy || !strings.Contains(result.Error, "response too large") {
+		t.Fatalf("expected body-size rejection, got %+v", result)
 	}
 }
