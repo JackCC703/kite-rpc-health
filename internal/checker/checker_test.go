@@ -142,3 +142,44 @@ func TestOversizedRPCResponse(t *testing.T) {
 		t.Fatalf("expected body-size rejection, got %+v", result)
 	}
 }
+
+func TestMinimumBlockThreshold(t *testing.T) {
+	srv := serverFor("0x940", "0x12") // block 18
+	defer srv.Close()
+	for _, tc := range []struct {
+		name    string
+		minimum uint64
+		healthy bool
+	}{
+		{"disabled", 0, true},
+		{"below observed", 17, true},
+		{"equal observed", 18, true},
+		{"above observed", 19, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := NewClient(time.Second).CheckWithMinBlock(context.Background(), srv.URL, tc.minimum)
+			if r.Healthy != tc.healthy || r.BlockNumber != 18 || r.ChainID != KiteTestnetChainID {
+				t.Fatalf("unexpected result: %+v", r)
+			}
+			if !tc.healthy && !strings.Contains(r.Error, "below minimum") {
+				t.Fatalf("missing stale-block diagnostic: %+v", r)
+			}
+		})
+	}
+}
+
+func TestBlockHeightRPCFailurePrecedesMinimumBlockCheck(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "eth_blockNumber") {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		fmt.Fprint(w, `{"jsonrpc":"2.0","id":1,"result":"0x940"}`)
+	}))
+	defer srv.Close()
+	r := NewClient(time.Second).CheckWithMinBlock(context.Background(), srv.URL, 100)
+	if r.Healthy || !strings.Contains(r.Error, "503") || strings.Contains(r.Error, "below minimum") {
+		t.Fatalf("should report the original RPC failure, got %+v", r)
+	}
+}

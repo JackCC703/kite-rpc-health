@@ -6,6 +6,7 @@ A small, original Go CLI that checks a KiteAI Testnet JSON-RPC endpoint.
 
 - `eth_chainId` must return **2368** (`0x940`), the KiteAI Testnet chain ID.
 - `eth_blockNumber` must return a valid hexadecimal block height.
+- Optional `-min-block` rejects nodes below a caller-provided minimum observed block number (useful for detecting lagging endpoints).
 - Measures the time spent fetching both results, including network latency.
 - Emits one JSON result and exits with status 0 on success or 1 on RPC failure.
 
@@ -21,6 +22,8 @@ Go 1.23 or later. No third-party Go dependencies.
 go run ./cmd/kite-rpc-health
 # Or run with a custom endpoint and timeout:
 go run ./cmd/kite-rpc-health -rpc http://127.0.0.1:8545 -timeout 3s
+# Require a minimum block height when checking a lagging endpoint:
+go run ./cmd/kite-rpc-health -min-block 22000000
 ```
 
 Example response format (illustrative, not a live result):
@@ -56,6 +59,7 @@ The application performs actual Ethereum-compatible JSON-RPC requests to the [Ki
 - Testnet only; the chain ID check intentionally rejects other EVM networks.
 - Checks endpoint responsiveness, not consensus, finality, or chain data accuracy.
 - Each run performs two sequential JSON-RPC requests.
+- `-min-block` is an operator-supplied threshold, not a consensus or finality proof; a static threshold becomes less useful over time.
 - No API authentication options; intended for public RPC or local testing.
 
 Licensed under MIT; see `LICENSE`.

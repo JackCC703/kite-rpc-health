@@ -90,7 +90,14 @@ func (c *Client) call(ctx context.Context, endpoint, method string) (uint64, err
 	return n, nil
 }
 
+// Check validates KiteAI chain identity and RPC responsiveness.
 func (c *Client) Check(ctx context.Context, endpoint string) Result {
+	return c.CheckWithMinBlock(ctx, endpoint, 0)
+}
+
+// CheckWithMinBlock can additionally reject endpoints that lag behind a caller-
+// supplied minimum block height. Zero disables the threshold.
+func (c *Client) CheckWithMinBlock(ctx context.Context, endpoint string, minBlock uint64) Result {
 	r := Result{RPCURL: endpoint}
 	if endpoint == "" {
 		r.Error = "RPC URL is empty"
@@ -107,6 +114,9 @@ func (c *Client) Check(ctx context.Context, endpoint string) Result {
 		} else {
 			r.BlockNumber, err = c.call(ctx, endpoint, "eth_blockNumber")
 		}
+	}
+	if err == nil && minBlock > 0 && r.BlockNumber < minBlock {
+		err = fmt.Errorf("block number %d below minimum %d", r.BlockNumber, minBlock)
 	}
 	r.LatencyMS = time.Since(start).Milliseconds()
 	if err != nil {
