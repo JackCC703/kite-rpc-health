@@ -43,3 +43,7 @@ When a reachable RPC reports a different chain ID, or the block-number RPC fails
 The `-min-block` CLI flag passes a nonnegative minimum acceptable block number to `CheckWithMinBlock`. The default `0` leaves the prior behavior unchanged. If the reported chain is Kite Testnet but its block height is lower than the threshold, the result includes the actual `chain_id`, `block_number`, `healthy: false`, and a specific "below minimum" error; the process exits 1. A failed JSON-RPC read remains the primary error instead of being confused with a stale-block error. Tests cover disabled, lower, equal, and higher thresholds as well as RPC failure.
 
 Example: `go run ./cmd/kite-rpc-health -min-block 22000000`. Use a recent trusted reference height when setting the threshold; this option alone cannot establish finality or detect chain reorganization.
+
+## Multi-endpoint comparison (2026-11-26)
+
+Local HTTP fixtures cover lagging nodes, the exact lag threshold, wrong-chain exclusion, HTTP failures, the absence of a usable reference, valid zero block heights, and interaction with the absolute minimum block threshold. The comparison preserves input ordering and shares an HTTP client across bounded concurrent workers. Run `go test -race ./...` to check concurrent access.

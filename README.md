@@ -6,6 +6,7 @@ A small, original Go CLI that checks a KiteAI Testnet JSON-RPC endpoint.
 
 - `eth_chainId` must return **2368** (`0x940`), the KiteAI Testnet chain ID.
 - `eth_blockNumber` must return a valid hexadecimal block height.
+- Optional `-compare` and `-max-lag` compare multiple KiteAI endpoints against the highest observed block.
 - Optional `-min-block` rejects nodes below a caller-provided minimum observed block number (useful for detecting lagging endpoints).
 - Measures the time spent fetching both results, including network latency.
 - Emits one JSON result and exits with status 0 on success or 1 on RPC failure.
@@ -58,7 +59,8 @@ The application performs actual Ethereum-compatible JSON-RPC requests to the [Ki
 
 - Testnet only; the chain ID check intentionally rejects other EVM networks.
 - Checks endpoint responsiveness, not consensus, finality, or chain data accuracy.
-- Each run performs two sequential JSON-RPC requests.
+- Each endpoint requires up to two sequential JSON-RPC requests; comparison mode checks endpoints concurrently.
+- Relative comparison is based on observed heights, not consensus; a faulty endpoint may report an inaccurate reference.
 - `-min-block` is an operator-supplied threshold, not a consensus or finality proof; a static threshold becomes less useful over time.
 - No API authentication options; intended for public RPC or local testing.
 
