@@ -18,16 +18,21 @@ func main() {
 	minBlock := flag.Uint64("min-block", 0, "minimum acceptable block number (0 disables threshold)")
 	peers := flag.String("compare", "", "additional comma-separated RPC endpoints")
 	maxLag := flag.Uint64("max-lag", 5, "maximum block lag in comparison mode")
+	maxAge := flag.Duration("max-block-age", 0, "maximum latest block age (0 disables check)")
 	flag.Parse()
 	if *timeout <= 0 {
 		fmt.Fprintln(os.Stderr, "timeout must be positive")
+		os.Exit(2)
+	}
+	if *maxAge < 0 {
+		fmt.Fprintln(os.Stderr, "max-block-age must be nonnegative")
 		os.Exit(2)
 	}
 	client := checker.NewClient(*timeout)
 	var result any
 	var healthy bool
 	if *peers == "" {
-		single := client.CheckWithMinBlock(context.Background(), *rpcURL, *minBlock)
+		single := client.CheckWithFreshness(context.Background(), *rpcURL, *minBlock, *maxAge)
 		result, healthy = single, single.Healthy
 	} else {
 		endpoints := []string{strings.TrimSpace(*rpcURL)}
@@ -45,7 +50,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "primary RPC endpoint must not be empty")
 			os.Exit(2)
 		}
-		comparison := client.Compare(context.Background(), endpoints, *minBlock, *maxLag)
+		comparison := client.CompareWithFreshness(context.Background(), endpoints, *minBlock, *maxLag, *maxAge)
 		result, healthy = comparison, comparison.Healthy
 	}
 	if err := json.NewEncoder(os.Stdout).Encode(result); err != nil {

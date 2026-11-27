@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Comparison reports relative lag against the highest successful observation.
@@ -23,6 +24,10 @@ type ComparedResult struct {
 // Compare checks endpoints concurrently with bounded concurrency and preserves
 // input order. Failed or wrong-chain endpoints cannot establish the reference.
 func (c *Client) Compare(ctx context.Context, endpoints []string, minBlock, maxLag uint64) Comparison {
+	return c.CompareWithFreshness(ctx, endpoints, minBlock, maxLag, 0)
+}
+
+func (c *Client) CompareWithFreshness(ctx context.Context, endpoints []string, minBlock, maxLag uint64, maxAge time.Duration) Comparison {
 	report := Comparison{MaxLag: maxLag, Results: make([]ComparedResult, len(endpoints))}
 	var wg sync.WaitGroup
 	jobs := make(chan int)
@@ -32,7 +37,7 @@ func (c *Client) Compare(ctx context.Context, endpoints []string, minBlock, maxL
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				report.Results[i].Result = c.Check(ctx, endpoints[i])
+				report.Results[i].Result = c.CheckWithFreshness(ctx, endpoints[i], 0, maxAge)
 			}
 		}()
 	}

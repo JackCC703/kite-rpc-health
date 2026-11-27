@@ -11,3 +11,6 @@
 
 ## 2026-11-26
 - Add bounded concurrent multi-RPC comparison with configurable maximum relative block lag, per-endpoint diagnostics, and backward-compatible single-node output.
+
+## 2026-11-27
+- Add optional latest-block timestamp health checking via `-max-block-age`, including per-endpoint freshness diagnostics and comparison support.

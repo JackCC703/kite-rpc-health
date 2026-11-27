@@ -6,6 +6,7 @@ A small, original Go CLI that checks a KiteAI Testnet JSON-RPC endpoint.
 
 - `eth_chainId` must return **2368** (`0x940`), the KiteAI Testnet chain ID.
 - `eth_blockNumber` must return a valid hexadecimal block height.
+- Optional `-max-block-age 2m` checks whether the latest block is fresh relative to the local clock.
 - Optional `-compare` and `-max-lag` compare multiple KiteAI endpoints against the highest observed block.
 - Optional `-min-block` rejects nodes below a caller-provided minimum observed block number (useful for detecting lagging endpoints).
 - Measures the time spent fetching both results, including network latency.

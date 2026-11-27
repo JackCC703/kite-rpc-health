@@ -47,3 +47,7 @@ Example: `go run ./cmd/kite-rpc-health -min-block 22000000`. Use a recent truste
 ## Multi-endpoint comparison (2026-11-26)
 
 Local HTTP fixtures cover lagging nodes, the exact lag threshold, wrong-chain exclusion, HTTP failures, the absence of a usable reference, valid zero block heights, and interaction with the absolute minimum block threshold. The comparison preserves input ordering and shares an HTTP client across bounded concurrent workers. Run `go test -race ./...` to check concurrent access.
+
+## Latest block freshness (2026-11-27)
+
+Local JSON-RPC fixtures cover fresh and stale blocks, future timestamps, missing and invalid timestamp fields, null results, overflowing quantities, exact RPC parameters, and exclusion of stale endpoints from the comparison reference. Existing single-node and comparison tests continue to run with freshness disabled.
