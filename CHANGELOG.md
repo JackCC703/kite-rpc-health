@@ -14,3 +14,7 @@
 
 ## 2026-11-27
 - Add optional latest-block timestamp health checking via `-max-block-age`, including per-endpoint freshness diagnostics and comparison support.
+
+## 2026-11-28
+- Enforce canonical hexadecimal JSON-RPC quantity encoding and add regression tests.
+- Record a manual live KiteAI testnet freshness check and its limitations.

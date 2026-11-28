@@ -97,7 +97,17 @@ func parseQuantity(result json.RawMessage, method string) (uint64, error) {
 	if !strings.HasPrefix(hexValue, "0x") || len(hexValue) <= 2 {
 		return 0, fmt.Errorf("%s result lacks 0x hex value", method)
 	}
-	n, err := strconv.ParseUint(hexValue[2:], 16, 64)
+	// Ethereum JSON-RPC quantities use minimal hexadecimal encoding.
+	digits := hexValue[2:]
+	if len(digits) > 1 && digits[0] == '0' {
+		return 0, fmt.Errorf("%s invalid hex result: leading zero", method)
+	}
+	for _, digit := range digits {
+		if !((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f') || (digit >= 'A' && digit <= 'F')) {
+			return 0, fmt.Errorf("%s invalid hex result: non-hexadecimal digit", method)
+		}
+	}
+	n, err := strconv.ParseUint(digits, 16, 64)
 	if err != nil {
 		return 0, fmt.Errorf("%s invalid hex result: %w", method, err)
 	}

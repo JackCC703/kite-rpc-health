@@ -51,3 +51,9 @@ Local HTTP fixtures cover lagging nodes, the exact lag threshold, wrong-chain ex
 ## Latest block freshness (2026-11-27)
 
 Local JSON-RPC fixtures cover fresh and stale blocks, future timestamps, missing and invalid timestamp fields, null results, overflowing quantities, exact RPC parameters, and exclusion of stale endpoints from the comparison reference. Existing single-node and comparison tests continue to run with freshness disabled.
+
+## Live testnet freshness and quantity validation (2026-11-28)
+
+A manual read-only check of https://rpc-testnet.gokite.ai/ with a two-minute freshness threshold returned chain ID 2368, block 22045558, timestamp 1795840540, age 1841 seconds, and latency 1376 ms. The checker correctly reported unhealthy (exit 1). A subsequent basic check without the freshness threshold returned the same height and reported healthy. This is a point-in-time observation of one RPC endpoint, not evidence of a network-wide halt. Local clock accuracy matters.
+
+Regression tests now verify minimal hexadecimal quantity encoding, reject leading zeros, signs, invalid digits and overflow, and accept zero and the maximum uint64 value.
